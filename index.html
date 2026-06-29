@@ -1,203 +1,416 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>図書館マップ (完全版)</title>
-<style>
-    body {
-        font-family: sans-serif;
-        margin: 0;
-        padding: 20px;
-        background-color: #f5f5f5;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>図書館内ナビゲーション（全棚対応・折りたたみ版）</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #ffffff;
+            color: #000000;
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
 
-    .library-container {
-        position: relative;
-        width: 100%;
-        max-width: 1200px;
-        margin: 0 auto;
-        background: #fff;
-        border: 1px solid #ccc;
-    }
+        h1 {
+            font-size: 1.3rem;
+            margin: 5px 0;
+            text-align: center;
+        }
 
-    .map-image {
-        width: 100%;
-        height: auto;
-        display: block;
-    }
+        /* 検索トグルボタン */
+        .search-toggle-btn {
+            background-color: #000000;
+            color: #ffffff;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 15px;
+            width: 100%;
+            max-width: 650px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
 
-    /* ハイライトの基本設定 */
-    .shelf-highlight {
-        position: absolute;
-        background-color: rgba(255, 223, 0, 0.4); 
-        border: 2px solid #ff0000;
-        border-radius: 4px;
-        opacity: 0; 
-        transition: opacity 0.3s ease-in-out;
-        pointer-events: none;
-        box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
-    }
+        /* 普段は折りたたまれている検索パネル */
+        .search-panel {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            width: 100%;
+            max-width: 650px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
 
-    /* 光らせる時のクラス */
-    .shelf-highlight.active {
-        opacity: 1;
-    }
+        .search-panel.open {
+            max-height: 400px; /* メニューの高さに合わせて自動調整（スクロール可能） */
+            overflow-y: auto;
+            border: 1px solid #dddddd;
+        }
 
-    /* 右上のメニューデザイン */
-    .search-menu {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        width: 280px;
-        max-height: 90%;
-        overflow-y: auto;
-        background: rgba(255, 255, 255, 0.95);
-        border: 2px solid #333;
-        border-radius: 8px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-        padding: 15px;
-        z-index: 10;
-        font-size: 0.95em;
-    }
+        /* ジャンルグループのスタイル */
+        .genre-group {
+            padding: 10px;
+        }
+        .genre-title {
+            font-size: 0.85rem;
+            font-weight: bold;
+            border-left: 3px solid #000000;
+            padding-left: 6px;
+            margin: 10px 0 5px 0;
+            color: #333333;
+        }
 
-    details { margin-bottom: 5px; }
-    summary {
-        cursor: pointer;
-        padding: 8px;
-        font-weight: bold;
-        background-color: #e9e9e9;
-        border-radius: 4px;
-        margin-bottom: 2px;
-    }
-    summary:hover { background-color: #dcdcdc; }
-    
-    details details summary {
-        font-weight: normal;
-        background-color: #f8f8f8;
-        border-bottom: 1px solid #ddd;
-        padding: 6px 8px;
-    }
+        /* ボタンのグリッド配置 */
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+            gap: 6px;
+            padding: 5px 0;
+        }
 
-    ul.sub-category {
-        list-style: none;
-        padding-left: 10px;
-        margin: 5px 0 15px 0;
-    }
-    ul.sub-category li {
-        padding: 6px;
-        cursor: pointer;
-        color: #0056b3;
-        border-bottom: 1px dashed #ccc;
-    }
-    ul.sub-category li:hover {
-        background-color: #e0f0ff;
-        font-weight: bold;
-    }
-</style>
+        .nav-button {
+            background-color: #ffffff;
+            color: #000000;
+            border: 1px solid #cccccc;
+            padding: 8px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: all 0.2s ease;
+        }
+
+        .nav-button:hover {
+            background-color: #f0f0f0;
+            border-color: #000000;
+        }
+
+        .nav-button.active {
+            background-color: #000000;
+            color: #ffffff;
+            border-color: #000000;
+        }
+
+        /* マップのコンテナ */
+        .map-container {
+            background-color: #ffffff;
+            border: 2px solid #000000;
+            padding: 10px;
+            max-width: 100%;
+            width: 650px;
+            box-sizing: border-box;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* モノトーンのデザイン設定 */
+        .border-main { fill: none; stroke: #000000; stroke-width: 3; }
+        .border-sub { fill: none; stroke: #000000; stroke-width: 1.5; }
+        .room-bg { fill: #f5f5f5; stroke: #000000; stroke-width: 1.5; }
+        .shelf-bg { fill: #e0e0e0; stroke: #000000; stroke-width: 1; }
+        .booth-bg { fill: #ffffff; stroke: #000000; stroke-width: 1; }
+        
+        /* 現在地ピン */
+        .current-pos { fill: #000000; stroke: #ffffff; stroke-width: 2; }
+        
+        /* テキストスタイル */
+        .txt { fill: #000000; font-size: 10px; font-family: sans-serif; text-anchor: middle; }
+        .txt-sm { fill: #000000; font-size: 8px; font-family: sans-serif; text-anchor: middle; }
+        .txt-bold { fill: #000000; font-size: 11px; font-family: sans-serif; text-anchor: middle; font-weight: bold; }
+
+        /* ルート（光る線）の白黒表現（黒太線が点滅・伸長する） */
+        .guide-path {
+            fill: none;
+            stroke: #000000;
+            stroke-width: 5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            opacity: 0;
+            stroke-dasharray: 1500;
+            stroke-dashoffset: 1500;
+            transition: opacity 0.2s ease;
+        }
+
+        /* アクティブ時のアニメーション */
+        .guide-path.active {
+            opacity: 1;
+            animation: drawPath 1.5s ease-out forwards, pulseGlow 1s infinite alternate;
+        }
+
+        @keyframes drawPath {
+            to { stroke-dashoffset: 0; }
+        }
+
+        @keyframes pulseGlow {
+            from {
+                stroke-width: 4;
+                filter: drop-shadow(0 0 1px #ffffff) drop-shadow(0 0 2px #000000);
+            }
+            to {
+                stroke-width: 6;
+                filter: drop-shadow(0 0 2px #ffffff) drop-shadow(0 0 5px #000000);
+            }
+        }
+    </style>
 </head>
 <body>
 
-<div class="library-container">
-    <img src="library-map.jpg" alt="図書館マップ" class="map-image">
+    <h1>図書館 閲覧室マップ</h1>
 
-    <div id="shelf-1" class="shelf-highlight" style="top: 60%; left: 38%; width: 15%; height: 3%;"></div> <div id="shelf-3" class="shelf-highlight" style="top: 53%; left: 38%; width: 15%; height: 3%;"></div> <div id="shelf-5" class="shelf-highlight" style="top: 46%; left: 38%; width: 15%; height: 3%;"></div> <div id="shelf-7" class="shelf-highlight" style="top: 39%; left: 38%; width: 15%; height: 3%;"></div> <div id="shelf-9" class="shelf-highlight" style="top: 32%; left: 38%; width: 15%; height: 3%;"></div> <div id="shelf-11" class="shelf-highlight" style="top: 25%; left: 38%; width: 15%; height: 3%;"></div> <div id="shelf-13" class="shelf-highlight" style="top: 18%; left: 38%; width: 15%; height: 3%;"></div> <div id="shelf-15" class="shelf-highlight" style="top: 11%; left: 38%; width: 15%; height: 3%;"></div> <div id="shelf-17" class="shelf-highlight" style="top: 60%; left: 63%; width: 15%; height: 3%;"></div> <div id="shelf-19" class="shelf-highlight" style="top: 53%; left: 63%; width: 15%; height: 3%;"></div> <div id="shelf-21" class="shelf-highlight" style="top: 46%; left: 63%; width: 15%; height: 3%;"></div> <div id="shelf-23" class="shelf-highlight" style="top: 39%; left: 63%; width: 15%; height: 3%;"></div> <div id="shelf-25" class="shelf-highlight" style="top: 32%; left: 63%; width: 15%; height: 3%;"></div> <div id="shelf-27" class="shelf-highlight" style="top: 25%; left: 63%; width: 15%; height: 3%;"></div> <div id="shelf-29" class="shelf-highlight" style="top: 18%; left: 63%; width: 15%; height: 3%;"></div> <div id="shelf-31" class="shelf-highlight" style="top: 11%; left: 63%; width: 15%; height: 3%;"></div> <div id="shelf-syllabus" class="shelf-highlight" style="top: 44%; left: 20%; width: 12%; height: 4%;"></div> <div id="shelf-career" class="shelf-highlight" style="top: 80%; left: 16%; width: 5%; height: 10%;"></div> <div id="shelf-qualify" class="shelf-highlight" style="top: 73%; left: 62%; width: 10%; height: 4%;"></div> <div id="shelf-ref-hist" class="shelf-highlight" style="top: 5%; left: 13%; width: 15%; height: 3%;"></div> <div id="shelf-ref-gen" class="shelf-highlight" style="top: 15%; left: 7%; width: 3%; height: 15%;"></div> <div class="search-menu">
-        <details open>
-            <summary>📚 分類から探す</summary>
+    <button class="search-toggle-btn" onclick="toggleSearchPanel()">
+        <span id="toggle-icon">🔍</span> <span id="toggle-text">探したい本のジャンルを選択する</span>
+    </button>
 
-            <details>
-                <summary>0類・1類 (情報・哲学)</summary>
-                <ul class="sub-category">
-                    <li onclick="highlightShelf('shelf-3')">0類 情報科学・図書館学</li>
-                    <li onclick="highlightShelf('shelf-3')">1類 哲学・心理学・宗教</li>
-                </ul>
-            </details>
+    <div id="search-panel" class="search-panel">
+        <div class="genre-group">
+            
+            <div class="genre-title">【左列書架】0〜4類・9類文学</div>
+            <div class="button-grid">
+                <button class="nav-button" onclick="selectRoute('shelf-1-2')">1・2番棚 (新書/参考)</button>
+                <button class="nav-button" onclick="selectRoute('shelf-3-4')">3・4番棚 (哲学/情報)</button>
+                <button class="nav-button" onclick="selectRoute('shelf-5-6')">5・6番棚 (歴史/地理)</button>
+                <button class="nav-button" onclick="selectRoute('shelf-7-8')">7・8番棚 (社会科学)</button>
+                <button class="nav-button" onclick="selectRoute('shelf-9-10')">9・10番棚 (数学/自然科学)</button>
+                <button class="nav-button" onclick="selectRoute('shelf-11-12')">11・12番棚 (物理/化学)</button>
+                <button class="nav-button" onclick="selectRoute('shelf-13-14')">13・14番棚 (地学/生物)</button>
+                <button class="nav-button" onclick="selectRoute('shelf-15-16')">15・16番棚 (文学/外国文学)</button>
+            </div>
 
-            <details>
-                <summary>2類・3類 (歴史・社会)</summary>
-                <ul class="sub-category">
-                    <li onclick="highlightShelf('shelf-5')">2類 歴史・地理・伝記</li>
-                    <li onclick="highlightShelf('shelf-7')">3類 社会科学 (政治・経済等)</li>
-                </ul>
-            </details>
+            <div class="genre-title">【右列書架】5類工学・7類芸術・8類言語・9類日本文学</div>
+            <div class="button-grid">
+                <button class="nav-button" onclick="selectRoute('shelf-17-18')">17・18番棚 (新書/参考)</button>
+                <button class="nav-button" onclick="selectRoute('shelf-19-20')">19・20番棚 (工学/土木力学)</button>
+                <button class="nav-button" onclick="selectRoute('shelf-21-22')">21・22番棚 (土木/建築)</button>
+                <button class="nav-button" onclick="selectRoute('shelf-23-24')">23・24番棚 (機械/電気)</button>
+                <button class="nav-button" onclick="selectRoute('shelf-25-26')">25・26番棚 (通信/電子)</button>
+                <button class="nav-button" onclick="selectRoute('shelf-27-28')">27・28番棚 (金属/化学工業)</button>
+                <button class="nav-button" onclick="selectRoute('shelf-29-30')">29・30番棚 (芸術/言語学)</button>
+                <button class="nav-button" onclick="selectRoute('shelf-31-32')">31・32番棚 (日本文学)</button>
+            </div>
 
-            <details>
-                <summary>4類 自然科学・数学</summary>
-                <ul class="sub-category">
-                    <li onclick="highlightShelf('shelf-9')">4類 数学・自然科学</li>
-                    <li onclick="highlightShelf('shelf-11')">4類 物理学</li>
-                    <li onclick="highlightShelf('shelf-11')">4類 化学</li>
-                    <li onclick="highlightShelf('shelf-13')">4類 地学・生物学</li>
-                </ul>
-            </details>
+            <div class="genre-title">【壁際・その他の書架】</div>
+            <div class="button-grid">
+                <button class="nav-button" onclick="selectRoute('wall-top-left')">上壁: 参考図書(歴史・地理)</button>
+                <button class="nav-button" onclick="selectRoute('wall-top-right')">上壁: 日本の小説・エッセイ</button>
+                <button class="nav-button" onclick="selectRoute('wall-left-1')">左壁: 参考図書(総記)</button>
+                <button class="nav-button" onclick="selectRoute('wall-left-2')">左壁: 大型美術全集</button>
+                <button class="nav-button" onclick="selectRoute('wall-right-1')">右壁: 日本の小説・エッセイ</button>
+                <button class="nav-button" onclick="selectRoute('wall-right-2')">右壁: 海外の翻訳小説</button>
+                <button class="nav-button" onclick="selectRoute('wall-right-3')">右壁: 大型図書</button>
+                <button class="nav-button" onclick="selectRoute('wall-right-4')">右壁: 文庫コーナー</button>
+                <button class="nav-button" onclick="selectRoute('shelf-new')">⑧ 新着・シラバス関連図書</button>
+            </div>
 
-            <details>
-                <summary>5類 工学・工業</summary>
-                <ul class="sub-category">
-                    <li onclick="highlightShelf('shelf-19')">5類 工学・工業基礎</li>
-                    <li onclick="highlightShelf('shelf-19')">5類 土木力学・測量</li>
-                    <li onclick="highlightShelf('shelf-21')">5類 土木工学・環境工学</li>
-                    <li onclick="highlightShelf('shelf-21')">5類 建築学・機械工学</li>
-                    <li onclick="highlightShelf('shelf-23')">5類 機械工学・宇宙工学</li>
-                    <li onclick="highlightShelf('shelf-23')">5類 電気工学</li>
-                    <li onclick="highlightShelf('shelf-25')">5類 通信工学・情報工学</li>
-                    <li onclick="highlightShelf('shelf-25')">5類 電子工学</li>
-                    <li onclick="highlightShelf('shelf-27')">5類 金属工学・化学工学</li>
-                    <li onclick="highlightShelf('shelf-27')">5類 化学工業</li>
-                </ul>
-            </details>
+            <div class="genre-title">【館内設備・閲覧エリア】</div>
+            <div class="button-grid">
+                <button class="nav-button" onclick="selectRoute('counter')">② カウンター</button>
+                <button class="nav-button" onclick="selectRoute('search-pc')">③ 検索コーナー(PC)</button>
+                <button class="nav-button" onclick="selectRoute('booth-7')">⑦ 個人ブース</button>
+                <button class="nav-button" onclick="selectRoute('seats-5')">⑤ 閲覧席・雑誌架エリア</button>
+            </div>
 
-            <details>
-                <summary>6類・7類・8類 (産業・芸術・語学)</summary>
-                <ul class="sub-category">
-                    <li onclick="highlightShelf('shelf-27')">6類 産業</li>
-                    <li onclick="highlightShelf('shelf-29')">7類 芸術・スポーツ</li>
-                    <li onclick="highlightShelf('shelf-29')">8類 言語学</li>
-                </ul>
-            </details>
-
-            <details>
-                <summary>9類 文学</summary>
-                <ul class="sub-category">
-                    <li onclick="highlightShelf('shelf-31')">9類 日本文学</li>
-                    <li onclick="highlightShelf('shelf-15')">9類 外国文学</li>
-                    <li onclick="highlightShelf('shelf-15')">9類 文学全般</li>
-                </ul>
-            </details>
-
-            <details>
-                <summary>特設コーナー・参考図書</summary>
-                <ul class="sub-category">
-                    <li onclick="highlightShelf('shelf-syllabus')">シラバス関連・新着図書</li>
-                    <li onclick="highlightShelf('shelf-qualify')">教員おすすめ・資格試験対策</li>
-                    <li onclick="highlightShelf('shelf-career')">就職資料</li>
-                    <li onclick="highlightShelf('shelf-1')">新書 (物理学〜文学)</li>
-                    <li onclick="highlightShelf('shelf-1')">参考図書 (社会科学・自然科学)</li>
-                    <li onclick="highlightShelf('shelf-17')">新書 (総記〜数学)</li>
-                    <li onclick="highlightShelf('shelf-17')">参考図書 (工学・産業)</li>
-                    <li onclick="highlightShelf('shelf-ref-hist')">参考図書 (歴史・地理)</li>
-                    <li onclick="highlightShelf('shelf-ref-gen')">参考図書 (総記)</li>
-                </ul>
-            </details>
-        </details>
+        </div>
     </div>
-</div>
 
-<script>
-    function highlightShelf(targetId) {
-        // 全てのハイライトを消去
-        const allHighlights = document.querySelectorAll('.shelf-highlight');
-        allHighlights.forEach(function(el) {
-            el.classList.remove('active');
-        });
+    <div class="map-container">
+        <svg viewBox="0 0 520 700">
+            <rect x="10" y="10" width="500" height="680" class="border-main" />
 
-        // 選択された本棚を光らせる
-        const targetElement = document.getElementById(targetId);
-        if (targetElement) {
-            targetElement.classList.add('active');
+            <line x1="80" y1="10" x2="80" y2="330" class="border-sub" />
+            <text x="45" y="180" class="txt-bold" style="writing-mode: vertical-rl;">事務室</text>
+
+            <rect x="10" y="520" width="70" height="130" class="room-bg" />
+            <text x="25" y="585" class="txt-bold" style="writing-mode: vertical-rl;">①ロッカーコーナー</text>
+            <line x1="50" y1="520" x2="50" y2="650" class="border-sub" />
+            <text x="62" y="545" class="txt-sm" style="writing-mode: vertical-rl;">手洗い</text>
+            <text x="62" y="600" class="txt-sm" style="writing-mode: vertical-rl;">ソファー</text>
+
+            <rect x="10" y="490" width="40" height="30" fill="#000000" />
+            <text x="30" y="510" class="txt-bold" fill="#ffffff">入口</text>
+            <circle cx="30" cy="505" r="5" class="current-pos" /> <path d="M 10 350 L 110 350 L 110 430 L 70 430 L 70 470 L 10 470" class="room-bg" />
+            <text x="60" y="400" class="txt-bold">②カウンター</text>
+
+            <rect x="100" y="270" width="60" height="30" class="shelf-bg" />
+            <line x1="100" y1="285" x2="160" y2="285" class="border-sub" stroke-dasharray="2,2" />
+            <text x="130" y="282" class="txt-sm">シラバス</text>
+            <text x="130" y="297" class="txt-sm">新着図書</text>
+            <text x="92" y="288" class="txt-bold">⑧</text>
+
+            <rect x="120" y="350" width="35" height="25" class="room-bg" />
+            <text x="137" y="366" class="txt-sm">コピー</text>
+
+            <g id="left-shelves">
+                <rect x="175" y="350" width="110" height="25" class="shelf-bg" />
+                <text x="230" y="365" class="txt-sm">1・2番棚</text>
+                <rect x="175" y="305" width="110" height="25" class="shelf-bg" />
+                <text x="230" y="320" class="txt-sm">3・4番棚</text>
+                <rect x="175" y="260" width="110" height="25" class="shelf-bg" />
+                <text x="230" y="275" class="txt-sm">5・6番棚</text>
+                <rect x="175" y="215" width="110" height="25" class="shelf-bg" />
+                <text x="230" y="230" class="txt-sm">7・8番棚</text>
+                <rect x="175" y="170" width="110" height="25" class="shelf-bg" />
+                <text x="230" y="185" class="txt-sm">9・10番棚</text>
+                <rect x="175" y="125" width="110" height="25" class="shelf-bg" />
+                <text x="230" y="140" class="txt-sm">11・12番棚</text>
+                <rect x="175" y="80" width="110" height="25" class="shelf-bg" />
+                <text x="230" y="95" class="txt-sm">13・14番棚</text>
+                <rect x="175" y="35" width="110" height="25" class="shelf-bg" />
+                <text x="230" y="50" class="txt-sm">15・16番棚</text>
+                
+                <rect x="145" y="170" width="25" height="25" class="shelf-bg" /><text x="157.5" y="185" class="txt-sm">大型</text>
+                <rect x="145" y="80" width="25" height="25" class="shelf-bg" /><text x="157.5" y="95" class="txt-sm">大型</text>
+            </g>
+
+            <g id="right-shelves">
+                <rect x="315" y="350" width="110" height="25" class="shelf-bg" /><text x="370" y="365" class="txt-sm">17・18番棚</text>
+                <rect x="315" y="305" width="110" height="25" class="shelf-bg" /><text x="370" y="320" class="txt-sm">19・20番棚</text>
+                <rect x="315" y="260" width="110" height="25" class="shelf-bg" /><text x="370" y="275" class="txt-sm">21・22番棚</text>
+                <rect x="315" y="215" width="110" height="25" class="shelf-bg" /><text x="370" y="230" class="txt-sm">23・24番棚</text>
+                <rect x="315" y="170" width="110" height="25" class="shelf-bg" /><text x="370" y="185" class="txt-sm">25・26番棚</text>
+                <rect x="315" y="125" width="110" height="25" class="shelf-bg" /><text x="370" y="140" class="txt-sm">27・28番棚</text>
+                <rect x="315" y="80" width="110" height="25" class="shelf-bg" /><text x="370" y="95" class="txt-sm">29・30番棚</text>
+                <rect x="315" y="35" width="110" height="25" class="shelf-bg" /><text x="370" y="50" class="txt-sm">31・32番棚</text>
+            </g>
+
+            <rect x="80" y="10" width="110" height="15" class="shelf-bg" /><text x="135" y="21" class="txt-sm">参考(歴史・地)</text>
+            <rect x="230" y="10" width="160" height="15" class="shelf-bg" /><text x="310" y="21" class="txt-sm">日本の小説・エッセイ</text>
+            <rect x="80" y="35" width="15" height="80" class="shelf-bg" /><text x="90" y="75" class="txt-sm" style="writing-mode: vertical-rl;">参考(総記)</text>
+            <rect x="80" y="125" width="15" height="100" class="shelf-bg" /><text x="90" y="175" class="txt-sm" style="writing-mode: vertical-rl;">大型美術全集</text>
+            
+            <rect x="485" y="10" width="25" height="300" class="shelf-bg" /><text x="495" y="150" class="txt-sm" style="writing-mode: vertical-rl;">日本の小説／海外翻訳</text>
+            <rect x="485" y="320" width="25" height="60" class="shelf-bg" /><text x="495" y="350" class="txt-sm" style="writing-mode: vertical-rl;">大型図書</text>
+            <rect x="485" y="390" width="25" height="90" class="shelf-bg" /><text x="497" y="435" class="txt-sm" style="writing-mode: vertical-rl;">文庫</text>
+
+            <g transform="translate(105, 40)">
+                <rect x="0" y="0" width="22" height="22" class="booth-bg" /><rect x="30" y="0" width="22" height="22" class="booth-bg" />
+                <rect x="0" y="35" width="22" height="22" class="booth-bg" /><rect x="30" y="35" width="22" height="22" class="booth-bg" />
+                <rect x="0" y="70" width="22" height="22" class="booth-bg" /><rect x="30" y="70" width="22" height="22" class="booth-bg" />
+                <rect x="0" y="105" width="22" height="22" class="booth-bg" /><rect x="30" y="105" width="22" height="22" class="booth-bg" />
+                <text x="25" y="150" class="txt-bold">⑦個人ブース</text>
+            </g>
+
+            <rect x="90" y="490" width="115" height="65" class="room-bg" />
+            <text x="145" y="505" class="txt-bold">③検索コーナー</text>
+            <rect x="100" y="515" width="25" height="12" class="booth-bg" /><text x="112.5" y="524" class="txt-sm">PC</text>
+            <rect x="132" y="515" width="25" height="12" class="booth-bg" /><text x="144.5" y="524" class="txt-sm">PC</text>
+            <rect x="165" y="515" width="25" height="12" class="booth-bg" /><text x="177.5" y="524" class="txt-sm">PC</text>
+            <rect x="100" y="535" width="25" height="12" class="booth-bg" /><text x="112.5" y="544" class="txt-sm">PC</text>
+            <rect x="132" y="535" width="25" height="12" class="booth-bg" /><text x="144.5" y="544" class="txt-sm">PC</text>
+            <rect x="165" y="535" width="25" height="12" class="booth-bg" /><text x="177.5" y="544" class="txt-sm">PC</text>
+
+            <rect x="90" y="565" width="15" height="85" class="shelf-bg" />
+            <text x="135" y="600" class="txt-sm">④ブラウジング</text>
+            <rect x="250" y="495" width="40" height="40" class="booth-bg" /><text x="270" y="518" class="txt">⑤</text>
+            <rect x="330" y="495" width="40" height="40" class="booth-bg" /><text x="350" y="518" class="txt">⑤</text>
+            <rect x="410" y="495" width="40" height="40" class="booth-bg" /><text x="430" y="518" class="txt">⑤</text>
+            <text x="350" y="555" class="txt-bold">⑤閲覧席エリア</text>
+
+            <g id="routes">
+                <path id="route-shelf-1-2" d="M 30 500 L 30 460 L 145 460 L 145 362.5 L 175 362.5" class="guide-path" />
+                <path id="route-shelf-3-4" d="M 30 500 L 30 460 L 145 460 L 145 317.5 L 175 317.5" class="guide-path" />
+                <path id="route-shelf-5-6" d="M 30 500 L 30 460 L 145 460 L 145 272.5 L 175 272.5" class="guide-path" />
+                <path id="route-shelf-7-8" d="M 30 500 L 30 460 L 145 460 L 145 227.5 L 175 227.5" class="guide-path" />
+                <path id="route-shelf-9-10" d="M 30 500 L 30 460 L 145 460 L 145 182.5 L 175 182.5" class="guide-path" />
+                <path id="route-shelf-11-12" d="M 30 500 L 30 460 L 145 460 L 145 137.5 L 175 137.5" class="guide-path" />
+                <path id="route-shelf-13-14" d="M 30 500 L 30 460 L 145 460 L 145 92.5 L 175 92.5" class="guide-path" />
+                <path id="route-shelf-15-16" d="M 30 500 L 30 460 L 145 460 L 145 47.5 L 175 47.5" class="guide-path" />
+
+                <path id="route-shelf-17-18" d="M 30 500 L 30 460 L 145 460 L 145 400 L 300 400 L 300 362.5 L 315 362.5" class="guide-path" />
+                <path id="route-shelf-19-20" d="M 30 500 L 30 460 L 145 460 L 145 400 L 300 400 L 300 317.5 L 315 317.5" class="guide-path" />
+                <path id="route-shelf-21-22" d="M 30 500 L 30 460 L 145 460 L 145 400 L 300 400 L 300 272.5 L 315 272.5" class="guide-path" />
+                <path id="route-shelf-23-24" d="M 30 500 L 30 460 L 145 460 L 145 400 L 300 400 L 300 227.5 L 315 227.5" class="guide-path" />
+                <path id="route-shelf-25-26" d="M 30 500 L 30 460 L 145 460 L 145 400 L 300 400 L 300 182.5 L 315 182.5" class="guide-path" />
+                <path id="route-shelf-27-28" d="M 30 500 L 30 460 L 145 460 L 145 400 L 300 400 L 300 137.5 L 315 137.5" class="guide-path" />
+                <path id="route-shelf-29-30" d="M 30 500 L 30 460 L 145 460 L 145 400 L 300 400 L 300 92.5 L 315 92.5" class="guide-path" />
+                <path id="route-shelf-31-32" d="M 30 500 L 30 460 L 145 460 L 145 400 L 300 400 L 300 47.5 L 315 47.5" class="guide-path" />
+
+                <path id="route-wall-top-left" d="M 30 500 L 30 460 L 145 460 L 145 25 L 135 25" class="guide-path" />
+                <path id="route-wall-top-right" d="M 30 500 L 30 460 L 145 460 L 145 400 L 300 400 L 300 25 L 310 25" class="guide-path" />
+                <path id="route-wall-left-1" d="M 30 500 L 30 460 L 145 460 L 145 400 L 100 400 L 100 75 L 95 75" class="guide-path" />
+                <path id="route-wall-left-2" d="M 30 500 L 30 460 L 145 460 L 145 400 L 100 400 L 100 175 L 95 175" class="guide-path" />
+                <path id="route-wall-right-1" d="M 30 500 L 30 460 L 145 460 L 145 400 L 440 400 L 440 150 L 485 150" class="guide-path" />
+                <path id="route-wall-right-2" d="M 30 500 L 30 460 L 145 460 L 145 400 L 440 400 L 440 220 L 485 220" class="guide-path" />
+                <path id="route-wall-right-3" d="M 30 500 L 30 460 L 145 460 L 145 400 L 440 400 L 440 350 L 485 350" class="guide-path" />
+                <path id="route-wall-right-4" d="M 30 500 L 30 460 L 145 460 L 145 400 L 440 400 L 440 435 L 485 435" class="guide-path" />
+                <path id="route-shelf-new" d="M 30 500 L 30 460 L 95 460 L 95 285 L 100 285" class="guide-path" />
+
+                <path id="route-counter" d="M 30 500 L 30 460 L 60 460" class="guide-path" />
+                <path id="route-search-pc" d="M 30 500 L 85 500 L 90 500" class="guide-path" />
+                <path id="route-booth-7" d="M 30 500 L 30 460 L 145 460 L 145 400 L 120 400 L 120 180" class="guide-path" />
+                <path id="route-seats-5" d="M 30 500 L 30 460 L 145 460 L 145 480 L 240 480" class="guide-path" />
+            </g>
+
+        </svg>
+    </div>
+
+    <script>
+        // 検索パネルの開け閉めを制御する関数
+        function toggleSearchPanel() {
+            const panel = document.getElementById('search-panel');
+            const icon = document.getElementById('toggle-icon');
+            const text = document.getElementById('toggle-text');
+            
+            panel.classList.toggle('open');
+            
+            if (panel.classList.contains('open')) {
+                icon.textContent = '❌';
+                text.textContent = '検索メニューを閉じる';
+            } else {
+                icon.textContent = '🔍';
+                text.textContent = '探したい本のジャンルを選択する';
+            }
         }
-    }
-</script>
 
+        // ルートを選択して表示する関数
+        function selectRoute(targetId) {
+            // すべてのルートをリセット
+            document.querySelectorAll('.guide-path').forEach(path => {
+                path.classList.remove('active');
+                path.style.animation = 'none';
+                path.offsetHeight; 
+                path.style.animation = null;
+            });
+
+            // ボタンのアクティブ色をリセット
+            document.querySelectorAll('.nav-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // ターゲットのルートを光らせる
+            const targetPath = document.getElementById(`route-${targetId}`);
+            if (targetPath) {
+                targetPath.classList.add('active');
+            }
+
+            // クリックされたボタンを黒く反転
+            event.currentTarget.classList.add('active');
+
+            // ルートが見えやすいように、ボタンを押したら自動でメニューを閉じる
+            setTimeout(() => {
+                toggleSearchPanel();
+            }, 300); 
+        }
+    </script>
 </body>
 </html>
