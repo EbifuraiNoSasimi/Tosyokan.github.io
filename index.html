@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>図書館マップ</title>
+<title>図書館マップ (完全版)</title>
 <style>
     body {
         font-family: sans-serif;
@@ -12,144 +12,189 @@
         background-color: #f5f5f5;
     }
 
-    /* マップとメニューの親コンテナ */
     .library-container {
         position: relative;
         width: 100%;
-        max-width: 1000px;
+        max-width: 1200px;
         margin: 0 auto;
         background: #fff;
         border: 1px solid #ccc;
     }
 
-    /* マップ画像 */
     .map-image {
         width: 100%;
         height: auto;
         display: block;
     }
 
-    /* ハイライトされる本棚（初期状態は透明） */
+    /* ハイライトの基本設定 */
     .shelf-highlight {
         position: absolute;
-        background-color: rgba(255, 255, 0, 0.5); /* 黄色の半透明 */
-        border: 3px solid red;
+        background-color: rgba(255, 223, 0, 0.4); 
+        border: 2px solid #ff0000;
         border-radius: 4px;
         opacity: 0; 
         transition: opacity 0.3s ease-in-out;
-        pointer-events: none; /* ハイライトがクリックの邪魔にならないようにする */
+        pointer-events: none;
+        box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
     }
 
-    /* アクティブ時のハイライト */
+    /* 光らせる時のクラス */
     .shelf-highlight.active {
         opacity: 1;
-        box-shadow: 0 0 15px rgba(255, 0, 0, 0.7);
     }
 
-    /* 右上のタブ・メニュー */
+    /* 右上のメニューデザイン */
     .search-menu {
         position: absolute;
         top: 10px;
         right: 10px;
-        width: 250px;
+        width: 280px;
+        max-height: 90%;
+        overflow-y: auto;
         background: rgba(255, 255, 255, 0.95);
-        border: 1px solid #333;
-        border-radius: 5px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        padding: 10px;
+        border: 2px solid #333;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        padding: 15px;
         z-index: 10;
+        font-size: 0.95em;
     }
 
-    /* アコーディオンメニューの装飾 */
-    details {
-        margin-bottom: 5px;
-    }
+    details { margin-bottom: 5px; }
     summary {
         cursor: pointer;
-        padding: 5px;
+        padding: 8px;
         font-weight: bold;
         background-color: #e9e9e9;
-        border-radius: 3px;
+        border-radius: 4px;
+        margin-bottom: 2px;
     }
-    summary:hover {
-        background-color: #dcdcdc;
-    }
+    summary:hover { background-color: #dcdcdc; }
+    
     details details summary {
         font-weight: normal;
-        background-color: transparent;
-        border-bottom: 1px solid #eee;
+        background-color: #f8f8f8;
+        border-bottom: 1px solid #ddd;
+        padding: 6px 8px;
     }
-    
-    /* 小分類のリスト */
+
     ul.sub-category {
         list-style: none;
-        padding-left: 15px;
-        margin: 5px 0;
+        padding-left: 10px;
+        margin: 5px 0 15px 0;
     }
     ul.sub-category li {
-        padding: 5px;
+        padding: 6px;
         cursor: pointer;
         color: #0056b3;
-        font-size: 0.9em;
+        border-bottom: 1px dashed #ccc;
     }
     ul.sub-category li:hover {
-        text-decoration: underline;
-        background-color: #f0f8ff;
+        background-color: #e0f0ff;
+        font-weight: bold;
     }
 </style>
 </head>
 <body>
 
 <div class="library-container">
-    <img src="library-map.jpg" alt="図書館概要閲覧室" class="map-image">
+    <img src="library-map.jpg" alt="図書館マップ" class="map-image">
 
-    <div id="shelf-nihon-bungaku" class="shelf-highlight" style="top: 12%; left: 70%; width: 15%; height: 5%;"></div>
-    
-    <div id="shelf-gaikoku-bungaku" class="shelf-highlight" style="top: 12%; left: 35%; width: 15%; height: 5%;"></div>
-    
-    <div id="shelf-sugaku" class="shelf-highlight" style="top: 28%; left: 35%; width: 15%; height: 5%;"></div>
+    <div id="shelf-1" class="shelf-highlight" style="top: 60%; left: 38%; width: 15%; height: 3%;"></div> <div id="shelf-3" class="shelf-highlight" style="top: 53%; left: 38%; width: 15%; height: 3%;"></div> <div id="shelf-5" class="shelf-highlight" style="top: 46%; left: 38%; width: 15%; height: 3%;"></div> <div id="shelf-7" class="shelf-highlight" style="top: 39%; left: 38%; width: 15%; height: 3%;"></div> <div id="shelf-9" class="shelf-highlight" style="top: 32%; left: 38%; width: 15%; height: 3%;"></div> <div id="shelf-11" class="shelf-highlight" style="top: 25%; left: 38%; width: 15%; height: 3%;"></div> <div id="shelf-13" class="shelf-highlight" style="top: 18%; left: 38%; width: 15%; height: 3%;"></div> <div id="shelf-15" class="shelf-highlight" style="top: 11%; left: 38%; width: 15%; height: 3%;"></div> <div id="shelf-17" class="shelf-highlight" style="top: 60%; left: 63%; width: 15%; height: 3%;"></div> <div id="shelf-19" class="shelf-highlight" style="top: 53%; left: 63%; width: 15%; height: 3%;"></div> <div id="shelf-21" class="shelf-highlight" style="top: 46%; left: 63%; width: 15%; height: 3%;"></div> <div id="shelf-23" class="shelf-highlight" style="top: 39%; left: 63%; width: 15%; height: 3%;"></div> <div id="shelf-25" class="shelf-highlight" style="top: 32%; left: 63%; width: 15%; height: 3%;"></div> <div id="shelf-27" class="shelf-highlight" style="top: 25%; left: 63%; width: 15%; height: 3%;"></div> <div id="shelf-29" class="shelf-highlight" style="top: 18%; left: 63%; width: 15%; height: 3%;"></div> <div id="shelf-31" class="shelf-highlight" style="top: 11%; left: 63%; width: 15%; height: 3%;"></div> <div id="shelf-syllabus" class="shelf-highlight" style="top: 44%; left: 20%; width: 12%; height: 4%;"></div> <div id="shelf-career" class="shelf-highlight" style="top: 80%; left: 16%; width: 5%; height: 10%;"></div> <div id="shelf-qualify" class="shelf-highlight" style="top: 73%; left: 62%; width: 10%; height: 4%;"></div> <div id="shelf-ref-hist" class="shelf-highlight" style="top: 5%; left: 13%; width: 15%; height: 3%;"></div> <div id="shelf-ref-gen" class="shelf-highlight" style="top: 15%; left: 7%; width: 3%; height: 15%;"></div> <div class="search-menu">
+        <details open>
+            <summary>📚 分類から探す</summary>
 
-    <div class="search-menu">
-        <details>
-            <summary>📂 分類から探す (大分類)</summary>
-            
             <details>
-                <summary>9類 文学</summary>
+                <summary>0類・1類 (情報・哲学)</summary>
                 <ul class="sub-category">
-                    <li onclick="highlightShelf('shelf-nihon-bungaku')">9類 日本文学</li>
-                    <li onclick="highlightShelf('shelf-gaikoku-bungaku')">9類 外国文学</li>
+                    <li onclick="highlightShelf('shelf-3')">0類 情報科学・図書館学</li>
+                    <li onclick="highlightShelf('shelf-3')">1類 哲学・心理学・宗教</li>
+                </ul>
+            </details>
+
+            <details>
+                <summary>2類・3類 (歴史・社会)</summary>
+                <ul class="sub-category">
+                    <li onclick="highlightShelf('shelf-5')">2類 歴史・地理・伝記</li>
+                    <li onclick="highlightShelf('shelf-7')">3類 社会科学 (政治・経済等)</li>
                 </ul>
             </details>
 
             <details>
                 <summary>4類 自然科学・数学</summary>
                 <ul class="sub-category">
-                    <li onclick="highlightShelf('shelf-sugaku')">4類 数学</li>
+                    <li onclick="highlightShelf('shelf-9')">4類 数学・自然科学</li>
+                    <li onclick="highlightShelf('shelf-11')">4類 物理学</li>
+                    <li onclick="highlightShelf('shelf-11')">4類 化学</li>
+                    <li onclick="highlightShelf('shelf-13')">4類 地学・生物学</li>
                 </ul>
             </details>
 
+            <details>
+                <summary>5類 工学・工業</summary>
+                <ul class="sub-category">
+                    <li onclick="highlightShelf('shelf-19')">5類 工学・工業基礎</li>
+                    <li onclick="highlightShelf('shelf-19')">5類 土木力学・測量</li>
+                    <li onclick="highlightShelf('shelf-21')">5類 土木工学・環境工学</li>
+                    <li onclick="highlightShelf('shelf-21')">5類 建築学・機械工学</li>
+                    <li onclick="highlightShelf('shelf-23')">5類 機械工学・宇宙工学</li>
+                    <li onclick="highlightShelf('shelf-23')">5類 電気工学</li>
+                    <li onclick="highlightShelf('shelf-25')">5類 通信工学・情報工学</li>
+                    <li onclick="highlightShelf('shelf-25')">5類 電子工学</li>
+                    <li onclick="highlightShelf('shelf-27')">5類 金属工学・化学工学</li>
+                    <li onclick="highlightShelf('shelf-27')">5類 化学工業</li>
+                </ul>
+            </details>
+
+            <details>
+                <summary>6類・7類・8類 (産業・芸術・語学)</summary>
+                <ul class="sub-category">
+                    <li onclick="highlightShelf('shelf-27')">6類 産業</li>
+                    <li onclick="highlightShelf('shelf-29')">7類 芸術・スポーツ</li>
+                    <li onclick="highlightShelf('shelf-29')">8類 言語学</li>
+                </ul>
+            </details>
+
+            <details>
+                <summary>9類 文学</summary>
+                <ul class="sub-category">
+                    <li onclick="highlightShelf('shelf-31')">9類 日本文学</li>
+                    <li onclick="highlightShelf('shelf-15')">9類 外国文学</li>
+                    <li onclick="highlightShelf('shelf-15')">9類 文学全般</li>
+                </ul>
+            </details>
+
+            <details>
+                <summary>特設コーナー・参考図書</summary>
+                <ul class="sub-category">
+                    <li onclick="highlightShelf('shelf-syllabus')">シラバス関連・新着図書</li>
+                    <li onclick="highlightShelf('shelf-qualify')">教員おすすめ・資格試験対策</li>
+                    <li onclick="highlightShelf('shelf-career')">就職資料</li>
+                    <li onclick="highlightShelf('shelf-1')">新書 (物理学〜文学)</li>
+                    <li onclick="highlightShelf('shelf-1')">参考図書 (社会科学・自然科学)</li>
+                    <li onclick="highlightShelf('shelf-17')">新書 (総記〜数学)</li>
+                    <li onclick="highlightShelf('shelf-17')">参考図書 (工学・産業)</li>
+                    <li onclick="highlightShelf('shelf-ref-hist')">参考図書 (歴史・地理)</li>
+                    <li onclick="highlightShelf('shelf-ref-gen')">参考図書 (総記)</li>
+                </ul>
+            </details>
         </details>
     </div>
 </div>
 
 <script>
-    // 指定したIDの本棚を光らせる関数
     function highlightShelf(targetId) {
-        // 1. まず、現在光っているすべてのハイライトを消す
+        // 全てのハイライトを消去
         const allHighlights = document.querySelectorAll('.shelf-highlight');
         allHighlights.forEach(function(el) {
             el.classList.remove('active');
         });
 
-        // 2. クリックされた分類に対応する本棚を光らせる
+        // 選択された本棚を光らせる
         const targetElement = document.getElementById(targetId);
         if (targetElement) {
             targetElement.classList.add('active');
-            
-            // (オプション) 3秒後に自動でハイライトを消す場合は以下のコメントアウトを外す
-            // setTimeout(() => {
-            //     targetElement.classList.remove('active');
-            // }, 3000);
         }
     }
 </script>
